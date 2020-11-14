@@ -76,14 +76,22 @@ public class ServerThread extends Thread {
 		return sendPayload(payload);
 	}
 
-	protected boolean sendConnectionStatus(String clientName, boolean isConnect) {
+	protected boolean sendConnectionStatus(String clientName, boolean isConnect, String message) {
 		Payload payload = new Payload();
 		if (isConnect) {
 			payload.setPayloadType(PayloadType.CONNECT);
+			payload.setMessage(message);
 		} else {
 			payload.setPayloadType(PayloadType.DISCONNECT);
+			payload.setMessage(message);
 		}
 		payload.setClientName(clientName);
+		return sendPayload(payload);
+	}
+
+	protected boolean sendClearList() {
+		Payload payload = new Payload();
+		payload.setPayloadType(PayloadType.CLEAR_PLAYERS);
 		return sendPayload(payload);
 	}
 
@@ -122,6 +130,10 @@ public class ServerThread extends Thread {
 			break;
 		case MESSAGE:
 			currentRoom.sendMessage(this, p.getMessage());
+			break;
+		case CLEAR_PLAYERS:
+			// we currently don't need to do anything since the UI/Client won't be sending
+			// this
 			break;
 		default:
 			log.log(Level.INFO, "Unhandled payload on server: " + p);
