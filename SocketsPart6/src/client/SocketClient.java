@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 import server.Payload;
 import server.PayloadType;
 
-//part 6
+//part 7
 public class SocketClient {
 	private static Socket server;
 	private static Thread fromServerThread;
@@ -101,6 +101,11 @@ public class SocketClient {
 		case MESSAGE:
 			if (event != null) {
 				event.onMessageReceive(p.getClientName(), p.getMessage());
+			}
+			break;
+		case CLEAR_PLAYERS:
+			if (event != null) {
+				event.onChangeRoom();
 			}
 			break;
 		default:
