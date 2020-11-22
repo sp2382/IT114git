@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -228,6 +229,19 @@ public class ClientUI extends JFrame implements Event {
 		sb.setValue(sb.getMaximum());
 	}
 
+	void addBoldMessage(String str) {
+		JEditorPane entry = new JEditorPane();
+		entry.setEditable(false);
+		;
+		entry.setText(str);
+		entry.setFont(entry.getFont().deriveFont(Font.BOLD));
+		Dimension d = new Dimension(textArea.getSize().width, calcHeightForText(str));
+		entry.setMinimumSize(d);
+		entry.setPreferredSize(d);
+		entry.setMaximumSize(d);
+		textArea.add(entry);
+	}
+
 	void next() {
 		card.next(this.getContentPane());
 	}
@@ -255,7 +269,7 @@ public class ClientUI extends JFrame implements Event {
 		log.log(Level.INFO, String.format("%s: %s", clientName, message));
 		addClient(clientName);
 		if (message != null && !message.isBlank()) {
-			self.addMessage(String.format("%s: %s", clientName, message));
+			self.addBoldMessage(String.format("%s: %s", clientName, message));
 		}
 	}
 
