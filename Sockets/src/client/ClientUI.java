@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -25,9 +24,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+//import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
+//import javax.swing.SwingConstants;
 
 public class ClientUI extends JFrame implements Event {
 	/**
@@ -40,7 +41,7 @@ public class ClientUI extends JFrame implements Event {
 	JPanel userPanel;
 	List<User> users = new ArrayList<User>();
 	private final static Logger log = Logger.getLogger(ClientUI.class.getName());
-	Dimension windowSize = new Dimension(400, 400);
+	Dimension windowSize = new Dimension(450, 500);
 
 	public ClientUI(String title) {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -135,12 +136,9 @@ public class ClientUI extends JFrame implements Event {
 		JButton button = new JButton("Send");
 		text.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), "sendAction");
 		text.getActionMap().put("sendAction", new AbstractAction() {
-			/**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
 
 			public void actionPerformed(ActionEvent actionEvent) {
+
 				button.doClick();
 			}
 		});
@@ -173,12 +171,12 @@ public class ClientUI extends JFrame implements Event {
 		Dimension d = new Dimension(100, windowSize.height);
 		scroll.setPreferredSize(d);
 
-		textArea.getParent().getParent().getParent().add(scroll, BorderLayout.EAST);
+		textArea.getParent().getParent().getParent().add(scroll, BorderLayout.WEST);
 	}
 
 	void addClient(String name) {
 		User u = new User(name);
-		Dimension p = new Dimension(userPanel.getSize().width, 30);
+		Dimension p = new Dimension(userPanel.getSize().width, 35);
 		u.setPreferredSize(p);
 		u.setMinimumSize(p);
 		u.setMaximumSize(p);
@@ -206,45 +204,33 @@ public class ClientUI extends JFrame implements Event {
 		FontMetrics metrics = self.getGraphics().getFontMetrics(self.getFont());
 		int hgt = metrics.getHeight();
 		int adv = metrics.stringWidth(str);
-		final int PIXEL_PADDING = 6;
+		final int PIXEL_PADDING = 7;
 		Dimension size = new Dimension(adv, hgt + PIXEL_PADDING);
-		final float PADDING_PERCENT = 1.1f;
+		final float PADDING_PERCENT = 1.3f;
 		// calculate modifier to line wrapping so we can display the wrapped message
 		int mult = (int) Math.floor(size.width / (textArea.getSize().width * PADDING_PERCENT));
-		// System.out.println(mult);
 		mult++;
 		return size.height * mult;
 	}
 
 	void addMessage(String str) {
-		JEditorPane entry = new JEditorPane();
+		JEditorPane entry = new JEditorPane("text/html", "");
 		entry.setEditable(false);
-		// entry.setLayout(null); entry.setText(str);
+
+		entry.setText(str);
+
 		Dimension d = new Dimension(textArea.getSize().width, calcHeightForText(str));
 		// attempt to lock all dimensions
 		entry.setMinimumSize(d);
 		entry.setPreferredSize(d);
 		entry.setMaximumSize(d);
+		// entry.add(s);
 		textArea.add(entry);
 
 		pack();
 		System.out.println(entry.getSize());
 		JScrollBar sb = ((JScrollPane) textArea.getParent().getParent()).getVerticalScrollBar();
 		sb.setValue(sb.getMaximum());
-	}
-
-	void addBoldMessage(String str) {
-		JEditorPane entry = new JEditorPane();
-		entry.setEditable(false);
-		// entry.setLayout(null);
-		entry.setText(str);
-		entry.setFont(entry.getFont().deriveFont(Font.BOLD));
-		Dimension d = new Dimension(textArea.getSize().width, calcHeightForText(str));
-		// attempt to lock all dimensions
-		entry.setMinimumSize(d);
-		entry.setPreferredSize(d);
-		entry.setMaximumSize(d);
-		textArea.add(entry);
 	}
 
 	void next() {
@@ -274,7 +260,7 @@ public class ClientUI extends JFrame implements Event {
 		log.log(Level.INFO, String.format("%s: %s", clientName, message));
 		addClient(clientName);
 		if (message != null && !message.isBlank()) {
-			self.addBoldMessage(String.format("%s: %s", clientName, message));
+			self.addMessage(String.format("<b>%s:</b> %s", clientName, message));
 		}
 	}
 
@@ -287,7 +273,7 @@ public class ClientUI extends JFrame implements Event {
 			if (u.getName() == clientName) {
 				removeClient(u);
 				iter.remove();
-				self.addMessage(String.format("%s: %s", clientName, message));
+				self.addMessage(String.format("<i>%s:</i> %s", clientName, message));
 				break;
 			}
 
@@ -297,7 +283,7 @@ public class ClientUI extends JFrame implements Event {
 	@Override
 	public void onMessageReceive(String clientName, String message) {
 		log.log(Level.INFO, String.format("%s: %s", clientName, message));
-		self.addMessage(String.format("%s: %s", clientName, message));
+		self.addMessage(String.format("<i>%s:</i> %s", clientName, message));
 	}
 
 	@Override
@@ -311,7 +297,7 @@ public class ClientUI extends JFrame implements Event {
 	}
 
 	public static void main(String[] args) {
-		ClientUI ui = new ClientUI("My UI");
+		ClientUI ui = new ClientUI("ChatApp");
 		if (ui != null) {
 			log.log(Level.FINE, "Started");
 		}

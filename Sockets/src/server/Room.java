@@ -3,6 +3,7 @@ package server;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -13,8 +14,18 @@ public class Room implements AutoCloseable {
 
 	// Commands
 	private final static String COMMAND_TRIGGER = "/";
-	private final static String CREATE_ROOM = "create";
-	private final static String JOIN_ROOM = "join";
+	private final static String privateMessageCommand = "@";
+	private final static String CREATE_ROOM = "createroom";
+	private final static String JOIN_ROOM = "joinroom";
+	private final static String ROLL = "roll";
+	private final static String FLIP = "flip";
+	private final String Random_Roll_MSG = "<i>Random number is :</i> ";
+	private final String Random_Coin_MSG = "<i>Coin Toss:</i> ";
+	private final String privateMessageReceive = "[PRIVATE MESSAGE RECIEVED]";
+	private final String privateMessageSent = "[PRIVATE MESSAGE SENT]";
+	private String coin;
+	private Random rand = new Random();
+	int randomNumber = 0;
 
 	public Room(String name) {
 		this.name = name;
@@ -119,12 +130,59 @@ public class Room implements AutoCloseable {
 					joinRoom(roomName, client);
 					wasCommand = true;
 					break;
+				case ROLL:
+					randomNumber = rand.nextInt(9) + 1;
+					this.sendMessage(client, Random_Roll_MSG + "<b><u>" + Integer.toString(randomNumber) + "</b></u>");
+					wasCommand = true;
+					break;
+				case FLIP:
+					randomNumber = rand.nextInt(9) + 1;
+					if (randomNumber % 2 == 0) {
+						coin = "<b font color = blue><u>HEADS</u></b>";
+						this.sendMessage(client, Random_Coin_MSG + coin);
+					} else if (randomNumber % 2 == 1) {
+						coin = "<b font color = red><u>TAILS</u></b>";
+						this.sendMessage(client, Random_Coin_MSG + coin);
+					}
+					wasCommand = true;
+					break;
 				}
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		return wasCommand;
+	}
+
+	protected boolean processPrivateMessage(String message, ServerThread client) {
+		boolean wasPrivate = false;
+		String privClient = null;
+		String newMessage = message;
+		try {
+			if (message.indexOf(privateMessageCommand) > -1) {
+				String[] comm = message.split(privateMessageCommand);
+				log.log(Level.INFO, message);
+				String part1 = comm[1];
+				String[] comm2 = part1.split(":");
+				privClient = comm2[0];
+				newMessage = comm2[1];
+				wasPrivate = true;
+			}
+
+			Iterator<ServerThread> iter = clients.iterator();
+			while (iter.hasNext()) {
+				ServerThread c = iter.next();
+				if (c.getClientName().equals(privClient)) {
+					c.send(client.getClientName(), privateMessageReceive + newMessage);
+					client.send(client.getClientName(), privateMessageSent + newMessage);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		// client = privClient;
+		return wasPrivate;
+		// return message;
 	}
 
 	// TODO changed from string to ServerThread
@@ -154,8 +212,12 @@ public class Room implements AutoCloseable {
 			// it was a command, don't broadcast
 			return;
 		}
+		if (processPrivateMessage(message, sender)) {
+			return;
+		}
 		Iterator<ServerThread> iter = clients.iterator();
 		while (iter.hasNext()) {
+
 			ServerThread client = iter.next();
 			boolean messageSent = client.send(sender.getClientName(), message);
 			if (!messageSent) {

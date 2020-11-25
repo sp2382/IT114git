@@ -15,6 +15,7 @@ public class ServerThread extends Thread {
 	private Room currentRoom;// what room we are in, should be lobby by default
 	private String clientName;
 	private final static Logger log = Logger.getLogger(ServerThread.class.getName());
+	private String color;
 
 	public String getClientName() {
 		return clientName;
@@ -71,9 +72,50 @@ public class ServerThread extends Thread {
 		Payload payload = new Payload();
 		payload.setPayloadType(PayloadType.MESSAGE);
 		payload.setClientName(clientName);
-		payload.setMessage(message);
+		payload.setMessage(processSpecialMessage(message));
 
 		return sendPayload(payload);
+	}
+
+	protected String processSpecialMessage(String str) {
+		int count = 0;
+		int targetChar = 0;
+		for (int i = 0; i < str.length(); i++) {
+			if (str.charAt(i) == '*' || str.charAt(i) == '#' || str.charAt(i) == '_') {
+				count++;
+			}
+
+			if (str.charAt(i) == '!') {
+				count++;
+
+				targetChar = str.indexOf("!");
+				if (targetChar != -1) {
+					color = str.substring(0, targetChar);
+					color = "" + color.toLowerCase() + "";
+				}
+
+			}
+		}
+
+		if (count >= 2) {
+			str = str.replace("*", "<b>");
+			str = str.replace("<b> ", "</b> ");
+			str = str.replace("#", "<i>");
+			str = str.replace("<i> ", "</i> ");
+			str = str.replace("_", "<u>");
+			str = str.replace("<u> ", "</u> ");
+
+			if (color != null) {
+				str = str.replace(str.substring(0, targetChar), "");
+
+				str = str.replace("!", "<font color = red" + color.toString() + ">");
+				str = str.replace("<font color=" + color.toString() + "> ", "<> ");
+
+			}
+
+		}
+
+		return str;
 	}
 
 	protected boolean sendConnectionStatus(String clientName, boolean isConnect, String message) {
