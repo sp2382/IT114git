@@ -15,7 +15,6 @@ public class Room implements AutoCloseable {
 	// Commands
 	private final static String COMMAND_TRIGGER = "/";
 	private final static String PRIVATE_MESSAGE = "@";
-	// private final static String PRIVATE = client.getClientName;
 	private final static String CREATE_ROOM = "createroom";
 	private final static String JOIN_ROOM = "joinroom";
 	private final static String ROLL = "roll";
@@ -24,8 +23,6 @@ public class Room implements AutoCloseable {
 	private final static String UNMUTE = "unmute";
 	private final String Random_Roll_MSG = "<i>Random number is :</i> ";
 	private final String Random_Coin_MSG = "<i>Coin Toss:</i> ";
-	private final String privateMessageReceive = "[PRIVATE MESSAGE RECIEVED]";
-	private final String privateMessageSent = "[PRIVATE MESSAGE SENT]";
 	private String coin;
 	private Random rand = new Random();
 	int randomNumber = 0;
@@ -120,8 +117,6 @@ public class Room implements AutoCloseable {
 					command = command.toLowerCase();
 				}
 				String roomName;
-				String clientMuteUnmute;
-				Iterator<ServerThread> iter = clients.iterator();
 				switch (command) {
 				case CREATE_ROOM:
 					roomName = comm2[1];
@@ -152,32 +147,39 @@ public class Room implements AutoCloseable {
 					wasCommand = true;
 					break;
 				case MUTE:
-					clientMuteUnmute = comm2[1];
-					if (!client.getClientName().equals(clientMuteUnmute)) {
-						client.mutedClients.add(clientMuteUnmute);
-						while (iter.hasNext()) {
-							ServerThread mutedC = iter.next();
-							if (mutedC.getClientName().equals(clientMuteUnmute)) {
-								client.send("[NOTIFICATION]", "You muted : " + mutedC.getClientName());
-							}
-						}
+					client.getClientName = comm2[1];
+					if (!client.getClientName().contentEquals(client.getClientName)) {
+						client.mutedClients.add(client.getClientName);
+
 					}
 
 					wasCommand = true;
 					break;
 				case UNMUTE:
-					clientMuteUnmute = comm2[1];
-					client.mutedClients.remove(clientMuteUnmute);
-					while (iter.hasNext()) {
-						ServerThread mutedC = iter.next();
-						if (mutedC.getClientName().equals(clientMuteUnmute)) {
-							client.send("[NOTIFICATION]", "You unmuted : " + mutedC.getClientName());
+					client.getClientName = comm2[1];
+					if (!client.getClientName().contentEquals(client.getClientName)) {
+						client.mutedClients.remove(client.getClientName);
+					}
+					wasCommand = true;
+					break;
+				case "pm":
+					List<String> pmClient = new ArrayList<String>();
+					pmClient.add(client.getClientName());
+					String newPM = message.replace("/pm", "");
+					String[] words = message.split(" ");
+					for (String word : words) {
+						if (word.contains("@")) {
+							String name = word.replace("@", "").toLowerCase();
+							pmClient.add(name);
 						}
 					}
+
+					sendPm(client, newPM, pmClient);
 					wasCommand = true;
 					break;
 				}
 			}
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -211,14 +213,28 @@ public class Room implements AutoCloseable {
 			// it was a command, don't broadcast
 			return;
 		}
-		if (processPrivateMessage(message, sender)) {
+		Iterator<ServerThread> iter = clients.iterator();
+		while (iter.hasNext()) {
+			ServerThread client = iter.next();
+			if (!client.isMuted(sender.getClientName())) {
+				boolean messageSent = client.send(sender.getClientName(), message);
+				if (!messageSent) {
+					iter.remove();
+					log.log(Level.INFO, "Removed client " + client.getId());
+				}
+			}
+		}
+	}
+
+	protected void sendPm(ServerThread sender, String message, List<String> users) {
+		log.log(Level.INFO, getName() + ": Sending message to " + clients.size() + " clients");
+		if (processCommands(message, sender)) { // it was a command,don't broadcast
 			return;
 		}
 		Iterator<ServerThread> iter = clients.iterator();
 		while (iter.hasNext()) {
-
 			ServerThread client = iter.next();
-			if (!client.isMuted(sender.getClientName())) {
+			if (users.contains(client.getClientName())) {
 				boolean messageSent = client.send(sender.getClientName(), message);
 				if (!messageSent) {
 					iter.remove();
