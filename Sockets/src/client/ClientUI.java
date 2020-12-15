@@ -8,6 +8,8 @@ import java.awt.FontMetrics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -24,11 +26,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
-//import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
-//import javax.swing.SwingConstants;
 
 public class ClientUI extends JFrame implements Event {
 	/**
@@ -284,6 +284,7 @@ public class ClientUI extends JFrame implements Event {
 	public void onMessageReceive(String clientName, String message) {
 		log.log(Level.INFO, String.format("%s: %s", clientName, message));
 		self.addMessage(String.format("<i>%s:</i> %s", clientName, message));
+		writeToFile("chat.txt", clientName + ": " + message);
 	}
 
 	@Override
@@ -300,6 +301,30 @@ public class ClientUI extends JFrame implements Event {
 		ClientUI ui = new ClientUI("ChatApp");
 		if (ui != null) {
 			log.log(Level.FINE, "Started");
+		}
+		createFile("chat.txt");
+	}
+
+	public static void createFile(String fileName) {
+		try {
+			File fileRef = new File(fileName);
+			if (fileRef.createNewFile()) {
+				System.out.println("Created new file");
+			} else {
+				System.out.println("File exists");
+			}
+			System.out.println(fileName + " is located at " + fileRef.getAbsolutePath());
+		} catch (IOException ie) {
+			ie.printStackTrace();
+		}
+	}
+
+	static void writeToFile(String fileName, String msg) {
+		try (FileWriter fw = new FileWriter(fileName, true)) {
+			fw.write(msg);
+			fw.write(System.lineSeparator());
+		} catch (IOException ie) {
+			ie.printStackTrace();
 		}
 	}
 }
