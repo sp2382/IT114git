@@ -1,0 +1,27 @@
+<html>
+  <head>
+    
+  </head>
+  <body>
+    <b>TestUser2:</b> joined the room Lobby
+  </body>
+</html>
+
+<html>
+  <head>
+    
+  </head>
+  <body>
+    <i>TestUser1:</i> Hey
+  </body>
+</html>
+
+<html>
+  <head>
+    
+  </head>
+  <body>
+    <i>TestUser2:</i> Hi
+  </body>
+</html>
+

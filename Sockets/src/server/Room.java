@@ -1,9 +1,14 @@
 package server;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,7 +26,7 @@ public class Room implements AutoCloseable {
 	private final static String FLIP = "flip";
 	private final static String MUTE = "mute";
 	private final static String UNMUTE = "unmute";
-	private final String Random_Roll_MSG = "<i>Random number is :</i> ";
+	private final String Random_Roll_MSG = "<i>Random number is:</i> ";
 	private final String Random_Coin_MSG = "<i>Coin Toss:</i> ";
 	private String coin;
 	private Random rand = new Random();
@@ -117,6 +122,8 @@ public class Room implements AutoCloseable {
 					command = command.toLowerCase();
 				}
 				String roomName;
+				Object sender;
+				Iterator<ServerThread> iter = clients.iterator();
 				switch (command) {
 				case CREATE_ROOM:
 					roomName = comm2[1];
@@ -148,9 +155,15 @@ public class Room implements AutoCloseable {
 					break;
 				case MUTE:
 					client.getClientName = comm2[1];
-					if (!client.getClientName().contentEquals(client.getClientName)) {
+					if (!client.getClientName().equals(client.getClientName)) {
 						client.mutedClients.add(client.getClientName);
-
+						while (iter.hasNext()) {
+							ServerThread mutedC = iter.next();
+							if (mutedC.getClientName().equals(client.getClientName)) {
+								mutedC.send(" ", client.getClientName() + " muted you");
+								client.send(" ", "You muted " + mutedC.getClientName());
+							}
+						}
 					}
 
 					wasCommand = true;
@@ -159,7 +172,9 @@ public class Room implements AutoCloseable {
 					client.getClientName = comm2[1];
 					if (!client.getClientName().contentEquals(client.getClientName)) {
 						client.mutedClients.remove(client.getClientName);
+
 					}
+
 					wasCommand = true;
 					break;
 				case "pm":
@@ -226,6 +241,44 @@ public class Room implements AutoCloseable {
 		}
 	}
 
+	void saveMute(ServerThread client) {
+		try {
+			File mute = new File("MuteList.txt");
+			mute.createNewFile();
+			FileWriter w = new FileWriter("MuteList.txt", false);
+			Iterator<String> iter = client.mutedClients.iterator();
+			while (iter.hasNext()) {
+				String clientName = iter.next();
+				w.write(clientName + " ");
+			}
+			w.close();
+
+		} catch (IOException ie) {
+			ie.printStackTrace();
+		}
+	}
+
+	void loadMute(ServerThread client) {
+		try {
+			String[] clientArray;
+			File mute = new File("MuteList.txt");
+			Scanner s = new Scanner(mute);
+			while (s.hasNextLine()) {
+				clientArray = s.nextLine().split(" ");
+				for (String cName : clientArray) {
+					for (ServerThread c : clients) {
+						client.mutedClients.add(cName);
+					}
+				}
+
+			}
+			s.close();
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+
 	protected void sendPm(ServerThread sender, String message, List<String> users) {
 		log.log(Level.INFO, getName() + ": Sending message to " + clients.size() + " clients");
 		if (processCommands(message, sender)) { // it was a command,don't broadcast
@@ -267,5 +320,4 @@ public class Room implements AutoCloseable {
 		name = null;
 		// should be eligible for garbage collection now
 	}
-
 }

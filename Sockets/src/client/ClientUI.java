@@ -26,9 +26,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+//import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
+//import javax.swing.SwingConstants;
 
 public class ClientUI extends JFrame implements Event {
 	/**
@@ -157,6 +159,19 @@ public class ClientUI extends JFrame implements Event {
 		input.add(button);
 		panel.add(input, BorderLayout.SOUTH);
 		this.add(panel);
+
+		JButton xprtButton = new JButton("Chat Archive");
+		xprtButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				chatLog();
+			}
+		});
+		input.add(xprtButton);
+
+		panel.add(input, BorderLayout.SOUTH);
+		this.add(panel);
 	}
 
 	void createPanelUserList() {
@@ -172,6 +187,27 @@ public class ClientUI extends JFrame implements Event {
 		scroll.setPreferredSize(d);
 
 		textArea.getParent().getParent().getParent().add(scroll, BorderLayout.WEST);
+	}
+
+	void chatLog() {
+		StringBuilder sb = new StringBuilder();
+		Component[] components = textArea.getComponents();
+		for (Component comp : components) {
+			JEditorPane jedit = (JEditorPane) comp;
+			if (jedit != null) {
+				sb.append(jedit.getText() + System.lineSeparator());
+			}
+		}
+		String chatlog = sb.toString();
+		try {
+			File chatLog = new File("ChatLog.txt");
+			FileWriter writer = new FileWriter("ChatLog.txt");
+			writer.write(chatlog);
+			writer.close();
+
+		} catch (IOException ie) {
+			ie.printStackTrace();
+		}
 	}
 
 	void addClient(String name) {
@@ -284,7 +320,6 @@ public class ClientUI extends JFrame implements Event {
 	public void onMessageReceive(String clientName, String message) {
 		log.log(Level.INFO, String.format("%s: %s", clientName, message));
 		self.addMessage(String.format("<i>%s:</i> %s", clientName, message));
-		writeToFile("chat.txt", clientName + ": " + message);
 	}
 
 	@Override
@@ -301,30 +336,6 @@ public class ClientUI extends JFrame implements Event {
 		ClientUI ui = new ClientUI("ChatApp");
 		if (ui != null) {
 			log.log(Level.FINE, "Started");
-		}
-		createFile("chat.txt");
-	}
-
-	public static void createFile(String fileName) {
-		try {
-			File fileRef = new File(fileName);
-			if (fileRef.createNewFile()) {
-				System.out.println("Created new file");
-			} else {
-				System.out.println("File exists");
-			}
-			System.out.println(fileName + " is located at " + fileRef.getAbsolutePath());
-		} catch (IOException ie) {
-			ie.printStackTrace();
-		}
-	}
-
-	static void writeToFile(String fileName, String msg) {
-		try (FileWriter fw = new FileWriter(fileName, true)) {
-			fw.write(msg);
-			fw.write(System.lineSeparator());
-		} catch (IOException ie) {
-			ie.printStackTrace();
 		}
 	}
 }
